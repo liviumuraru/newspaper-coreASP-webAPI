@@ -78,7 +78,7 @@ namespace ArticleAPI.Controllers
             }
             catch(Exception ex)
             {
-                
+                return jsonResult;
             }
 
             return jsonResult;
@@ -94,23 +94,31 @@ namespace ArticleAPI.Controllers
             try
             {
                 article = _articleService.GetByID(id);
-                
+                DataTransfer.ModifyArticle(article, value);
+                var validationResults = new ArticleValidator().Validate(article);
+                var errorString = JsonConvert.SerializeObject(validationResults.Errors);
+                var jsonResult = Json(errorString);
+
+                if (!validationResults.IsValid)
+                {
+                    jsonResult.StatusCode = 400;
+                }
+
                 try
                 {
-                    DataTransfer.ModifyArticle(article, value);
                     _articleService.Update(article);
+                    jsonResult.Value += JsonConvert.SerializeObject(article);
                 }
                 catch(Exception ex)
                 {
-                    return new StatusCodeResult(400);
+                    return jsonResult;
                 }
+                return jsonResult;
             }
             catch(Exception ex)
             {
                 return new StatusCodeResult(404);
             }
-           
-            return article;
         }
 
         // DELETE api/articles/5
